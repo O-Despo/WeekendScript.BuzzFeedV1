@@ -17,11 +17,11 @@ begin = time.time()
 startYear = 2020
 endYear = 2020
 
-startDay = 18
-endDay = 19
+startDay = 1
+endDay = 2
 
-startMonth = 9
-endMonth = 9
+startMonth = 1
+endMonth = 1
 
 
 #Files save names and default start url
@@ -33,19 +33,18 @@ outCsvQuizName = "quizTitleList.csv"
 #Open or create files 
 #note the mode "w+" will lead to files being overwired 
 #BE CAREFULL AND MAKE BAKE UPS 
-initial_run_out = open(csvTitleUrl, mode='w+', newline='')
-initial_run_write = csv.writer(initial_run_out, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+csv_archive_Urls_out = open(csvTitleUrl, mode='w+', newline='')
+csv_archive_Urls_write = csv.writer(csv_archive_Urls_out, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
 csvUrlsAndTitlesForInput = open(csvTitleUrl, mode="r", newline='')
 csv_input_all_titles = csv.reader(csvUrlsAndTitlesForInput, delimiter=',')
 
 #Opens the csv for only quiz output 
-outCsv = open(outCsvQuizName, "w+", newline='')
+outCsv = open(outCsvQuizName, "w+", encoding='utf-8', newline='')
 csvWite = csv.writer(outCsv, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
 csvQuiz = open(outCsvQuizName, "r", newline='')
 csvQuizRead = csv.reader(csvQuiz, delimiter=',')
-
 
 """
 Section 1 
@@ -91,7 +90,7 @@ def saveToCSV(FirstColRow, SecondColRow, date):
 
     while (i < len(FirstColRow)):
         try: 
-            initial_run_write.writerow([FirstColRow[i], SecondColRow[i], date])
+            csv_archive_Urls_write.writerow([FirstColRow[i], SecondColRow[i], date])
         except:
             pass
         i += 1
@@ -103,6 +102,7 @@ Section 2
 Find all the quiz's from the section 1 run 
 And pull data 
 """
+
 def look_through_csv_for_quizs():
     
     #Define the regex patter for dates, name, and postion 
@@ -112,36 +112,34 @@ def look_through_csv_for_quizs():
     descriptionPattern = re.compile(r"8q.>(.*?)<\/")
     catagoriesPattern = re.compile(r"58\">.*?>(.*?)<")
 
+    i = 0
+
     for row in csv_input_all_titles:
         print(row[1])
-        if (row.count("buzzfeednews") < 1):
+        
+        if(row[1].find("buzzfeednews") == -1 and row[1].find("tasty.co") == -1):
             #Get page request
             pageCall = requests.get(row[1])
             pageText = pageCall.text
 
             #Find if quiz and date code
             quizBool = pageText.count('alt="Quiz badge"')
+
             #The numerical and more easily processed dates are one the sheet before if you want written out dates use un comment this 
             #datePosted = re.findall(datePattern, pageText)
             nameOfAuthor = re.findall(authorPattern, pageText)
             staffPosition = re.findall(staffPostionPatten, pageText)
             description = re.findall(descriptionPattern, pageText)
             catagories = re.findall(catagoriesPattern, pageText)
-            
-            if (quizBool == 1):
-                
-                #Try to write with date if not do not write 
-                try:
-                    csvWite.writerow([row[1], row[0], row[2], catagories[1], nameOfAuthor, staffPosition, description[0]])
-                except:
-                    csvWite.writerow(row)
-                
-                print("quiz")
-            
-            else:
-                pass
+            #Try to write with date if not do not write 
+            #try:
+            csvWite.writerow([row[1], row[0], row[2], quizBool, catagories, nameOfAuthor, staffPosition, description[0]])
+            #except:
+            #    csvWite.writerow(row)
         else:
             pass
+
+
 
 getAllURLsFromArchive(baseArchiveUrl)
 
@@ -149,4 +147,13 @@ look_through_csv_for_quizs()
 
 end = time.time()
 
-print (end - begin) 
+time_taken = end - begin
+
+timeTxt = open("time.txt", "w+")
+timeTxt.write(str(time_taken))
+
+timeTxt.close()
+csv_archive_Urls_out.close()
+csvUrlsAndTitlesForInput.close()
+outCsv.close()
+csvQuiz.close()
